@@ -16,6 +16,7 @@ import webbrowser
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk
 
 def fetch_crypto_data(crypto_id, days=30):
     url = f"https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart"
@@ -157,18 +158,24 @@ def main():
     
     root = tk.Tk()
     root.title("Analyseur de Cryptomonnaies")
+    root.geometry("400x400")
+    root.configure(bg="#f0f0f0")
     
-    tk.Label(root, text="Cryptomonnaies disponibles :").pack()
-    for name in cryptos.keys():
-        tk.Label(root, text=name.capitalize()).pack()
+    title_label = tk.Label(root, text="Analyseur de Cryptomonnaies", font=("Helvetica", 16, "bold"), bg="#f0f0f0")
+    title_label.pack(pady=10)
     
-    tk.Label(root, text="Entrez le nom de la cryptomonnaie :").pack()
+    tk.Label(root, text="Cryptomonnaies disponibles :", font=("Helvetica", 12), bg="#f0f0f0").pack(pady=5)
+    
+    # Utiliser une combobox pour sélectionner la cryptomonnaie
     crypto_name_var = tk.StringVar()
-    tk.Entry(root, textvariable=crypto_name_var).pack()
+    crypto_combobox = ttk.Combobox(root, textvariable=crypto_name_var, font=("Helvetica", 12))
+    crypto_combobox['values'] = [name.capitalize() for name in cryptos.keys()]
+    crypto_combobox.pack(pady=5)
     
-    tk.Label(root, text="Entrez le nombre de jours :").pack()
+    tk.Label(root, text="Entrez le nombre de jours :", font=("Helvetica", 12), bg="#f0f0f0").pack(pady=5)
     days_var = tk.IntVar()
-    tk.Entry(root, textvariable=days_var).pack()
+    dayBox=tk.Entry(root, textvariable=days_var, font=("Helvetica", 12)).pack(pady=5)
+    # dayBox.insert(0, "1")
     
     def on_analyze():
         crypto_name = crypto_name_var.get().lower()
@@ -194,7 +201,8 @@ def main():
         provide_advice(df)
         plot_data(df, crypto_id)
     
-    tk.Button(root, text="Analyser", command=on_analyze).pack()
+    analyze_button = tk.Button(root, text="Analyser", command=on_analyze, font=("Helvetica", 12), bg="#4CAF50", fg="white")
+    analyze_button.pack(pady=10)
 
     def on_buy():
         crypto_name = crypto_name_var.get().lower()
@@ -204,7 +212,8 @@ def main():
             return
         open_buy_link(crypto_id)
 
-    tk.Button(root, text="Acheter", command=on_buy).pack()
+    buy_button = tk.Button(root, text="Acheter", command=on_buy, font=("Helvetica", 12), bg="#2196F3", fg="white")
+    buy_button.pack(pady=10)
 
     root.mainloop()
 
