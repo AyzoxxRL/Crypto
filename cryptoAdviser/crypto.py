@@ -1,13 +1,3 @@
-"""
- this programm will analyse the crypto that you will choose and will
- advice you and show you a detailed graphic. He will tell you if it's a good idea to buy or to sell.
- You can now buy the crypto that you want.
-
-Author: Nolhan
-Date: 2024-06-26
-Version: 1.2
-"""
-
 import requests
 import pandas as pd
 import numpy as np
@@ -16,7 +6,6 @@ import webbrowser
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox
-import matplotlib.pyplot as plt
 
 def fetch_crypto_data(crypto_id, days=30):
     url = f"https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart"
@@ -49,19 +38,32 @@ def calculate_bollinger_bands(df, window=20):
     df['lower_band'] = df['middle_band'] - 2 * df['price'].rolling(window=window).std()
     return df
 
+def calculate_macd(df, short_window=12, long_window=26, signal_window=9):
+    df['ema_short'] = df['price'].ewm(span=short_window, adjust=False).mean()
+    df['ema_long'] = df['price'].ewm(span=long_window, adjust=False).mean()
+    df['macd'] = df['ema_short'] - df['ema_long']
+    df['macd_signal'] = df['macd'].ewm(span=signal_window, adjust=False).mean()
+    return df
+
 def generate_signals(df, short_window, long_window):
     df['signal'] = 0
     df.loc[df.index[short_window:], 'signal'] = np.where(
-        df['short_mavg'][short_window:] > df['long_mavg'][short_window:], 1, 0
+        (df['short_mavg'][short_window:] > df['long_mavg'][short_window:]) &
+        (df['macd'][short_window:] > df['macd_signal'][short_window:]) &
+        (df['rsi'][short_window:] < 30), 1, 0
+    )
+    df.loc[df.index[short_window:], 'signal'] = np.where(
+        (df['short_mavg'][short_window:] < df['long_mavg'][short_window:]) &
+        (df['macd'][short_window:] < df['macd_signal'][short_window:]) &
+        (df['rsi'][short_window:] > 70), -1, df['signal'][short_window:]
     )
     df['position'] = df['signal'].diff()
     return df
 
 def plot_data(df, crypto_id):
-    # Fermer toutes les figures ouvertes avant de créer une nouvelle figure
     plt.close('all')
     
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [3, 1]})
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), gridspec_kw={'height_ratios': [3, 1, 1]})
     
     # Plot des prix et des moyennes mobiles
     ax1.plot(df.index, df['price'], label='Prix', color='blue')
@@ -98,6 +100,14 @@ def plot_data(df, crypto_id):
     ax2.set_ylabel('RSI')
     ax2.set_xlabel('Date')
     ax2.legend()
+    
+    # Plot du MACD
+    ax3.plot(df.index, df['macd'], label='MACD', color='blue')
+    ax3.plot(df.index, df['macd_signal'], label='Signal MACD', color='red')
+    ax3.set_title('MACD (Moving Average Convergence Divergence)')
+    ax3.set_ylabel('MACD')
+    ax3.set_xlabel('Date')
+    ax3.legend()
     
     plt.tight_layout()
     plt.show()
@@ -146,7 +156,7 @@ def main():
     crypto_name_var = tk.StringVar()
     tk.Entry(root, textvariable=crypto_name_var).pack()
     
-    tk.Label(root, text="Entrez le nombre de jours à analyser :").pack()
+    tk.Label(root, text="Entrez le nombre de jours :").pack()
     days_var = tk.IntVar()
     tk.Entry(root, textvariable=days_var).pack()
     
@@ -168,6 +178,7 @@ def main():
         df = calculate_moving_averages(df, short_window, long_window)
         df = calculate_rsi(df)
         df = calculate_bollinger_bands(df)
+        df = calculate_macd(df)
         df = generate_signals(df, short_window, long_window)
         print("Recommandations d'achat/vente :")
         provide_advice(df)
