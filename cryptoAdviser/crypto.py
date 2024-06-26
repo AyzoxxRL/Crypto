@@ -1,16 +1,13 @@
-"""
- this programm will just analyse the crypto that you will choose and will advice you and show you a graphic. He will tell you if it's a good idea to buy or to sell.
-
-Author: AyzoxxRL
-Date: 2024-06-26
-Version: 1.0
-"""
+# crypto_analyzer.py
 
 import requests
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import webbrowser
 from datetime import datetime, timedelta
+import tkinter as tk
+from tkinter import messagebox
 
 def fetch_crypto_data(crypto_id, days=30):
     url = f"https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart"
@@ -91,6 +88,10 @@ def provide_advice(df):
             else:
                 print(f"{index.date()}: Attendre. Prix actuel: {row['price']:.2f} USD")
 
+def open_buy_link(crypto_id):
+    url = f"https://www.coingecko.com/en/coins/{crypto_id}"
+    webbrowser.open(url)
+
 def main():
     cryptos = {
         'bitcoin': 'bitcoin',
@@ -105,43 +106,57 @@ def main():
         'chainlink': 'chainlink'
     }
     
-    print("Cryptomonnaies disponibles :")
+    root = tk.Tk()
+    root.title("Analyseur de Cryptomonnaies")
+    
+    tk.Label(root, text="Cryptomonnaies disponibles :").pack()
     for name in cryptos.keys():
-        print(name.capitalize())
+        tk.Label(root, text=name.capitalize()).pack()
     
-    crypto_name = input("Entrez le nom de la cryptomonnaie : ").lower()
-    crypto_id = cryptos.get(crypto_name)
+    tk.Label(root, text="Entrez le nom de la cryptomonnaie :").pack()
+    crypto_name_var = tk.StringVar()
+    tk.Entry(root, textvariable=crypto_name_var).pack()
     
-    if not crypto_id:
-        print("Cryptomonnaie non trouvée.")
-        return
+    tk.Label(root, text="Entrez le nombre de jours à analyser :").pack()
+    days_var = tk.IntVar()
+    tk.Entry(root, textvariable=days_var).pack()
     
-    days = int(input("Entrez le nombre de jours de données à récupérer : "))
+    def on_analyze():
+        crypto_name = crypto_name_var.get().lower()
+        crypto_id = cryptos.get(crypto_name)
+        
+        if not crypto_id:
+            messagebox.showerror("Erreur", "Cryptomonnaie non trouvée.")
+            return
+        
+        days = days_var.get()
+        
+        df = fetch_crypto_data(crypto_id, days)
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df.set_index('timestamp', inplace=True)
+        short_window = 5
+        long_window = 20
+        df = calculate_moving_averages(df, short_window, long_window)
+        df = calculate_rsi(df)
+        df = calculate_bollinger_bands(df)
+        df = generate_signals(df, short_window, long_window)
+        print("Recommandations d'achat/vente :")
+        provide_advice(df)
+        plot_data(df, crypto_id)
     
-    df = fetch_crypto_data(crypto_id, days)
-    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-    df.set_index('timestamp', inplace=True)
-    
-    short_window = 5
-    long_window = 20
-    
-    df = calculate_moving_averages(df, short_window, long_window)
-    df = calculate_rsi(df)
-    df = calculate_bollinger_bands(df)
-    df = generate_signals(df, short_window, long_window)
-    
-    print("Recommandations d'achat/vente :")
-    provide_advice(df)
-    
-    plot_data(df, crypto_id)
+    tk.Button(root, text="Analyser", command=on_analyze).pack()
+
+    def on_buy():
+        crypto_name = crypto_name_var.get().lower()
+        crypto_id = cryptos.get(crypto_name)
+        if not crypto_id:
+            messagebox.showerror("Erreur", "Cryptomonnaie non trouvée.")
+            return
+        open_buy_link(crypto_id)
+
+    tk.Button(root, text="Acheter", command=on_buy).pack()
+
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
-    ### Explication
-
-# - **cryptos** : Dictionnaire contenant les IDs des cryptomonnaies populaires.
-# - **crypto_name** : Nom de la cryptomonnaie entré par l'utilisateur.
-# - **crypto_id** : ID de la cryptomonnaie récupéré à partir du dictionnaire `cryptos`.
-
-# le script permet à l'utilisateur de choisir parmi une liste de cryptomonnaies populaires et fournit des conseils basés sur l'évolution de la cryptomonnaie choisie. Les graphiques sont générés pour visualiser les données et les indicateurs techniques.##
-# Ne me remerciez pas#
