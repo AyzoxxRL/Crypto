@@ -1,3 +1,13 @@
+"""
+this programm will analyse the crypto that you will choose and will advice you and show you a graphic.
+ He will tell you if it's a good idea to buy or to sell. In this new version you can now buy it if you want.
+ The programm is now more precise.
+
+Author: Nolhan
+Date: 2024-06-21
+Version: 1.3
+"""
+
 import requests
 import pandas as pd
 import numpy as np
