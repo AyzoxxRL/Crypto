@@ -70,6 +70,34 @@ def plot_data(df, crypto_id):
     ax1.set_ylabel('Prix (USD)')
     ax1.legend()
     
+    # Ajouter des annotations pour les signaux d'achat/vente
+    for index, row in df.iterrows():
+        if row['position'] == 1:
+            ax1.annotate('Acheter', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
+                         arrowprops=dict(facecolor='red', shrink=0.05), color='red')
+        elif row['position'] == -1:
+            ax1.annotate('Vendre', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
+                         arrowprops=dict(facecolor='green', shrink=0.05), color='green')
+        else:
+            if row['rsi'] < 30:
+                ax1.annotate('Attendre', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
+                             arrowprops=dict(facecolor='blue', shrink=0.05), color='blue')
+            elif row['rsi'] > 70:
+                ax1.annotate('Attendre', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
+                             arrowprops=dict(facecolor='blue', shrink=0.05), color='blue')
+    
+    # Plot du RSI
+    ax2.plot(df.index, df['rsi'], label='RSI', color='magenta')
+    ax2.axhline(30, linestyle='--', alpha=0.5, color='red')
+    ax2.axhline(70, linestyle='--', alpha=0.5, color='red')
+    ax2.set_title('Indice de Force Relative (RSI)')
+    ax2.set_ylabel('RSI')
+    ax2.set_xlabel('Date')
+    ax2.legend()
+    
+    plt.tight_layout()
+    plt.show()
+    
     # Plot du RSI
     ax2.plot(df.index, df['rsi'], label='RSI', color='magenta')
     ax2.axhline(30, linestyle='--', alpha=0.5, color='red')
