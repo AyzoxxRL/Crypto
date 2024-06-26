@@ -16,6 +16,7 @@ import webbrowser
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox
+import matplotlib.pyplot as plt
 
 def fetch_crypto_data(crypto_id, days=30):
     url = f"https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart"
@@ -57,6 +58,9 @@ def generate_signals(df, short_window, long_window):
     return df
 
 def plot_data(df, crypto_id):
+    # Fermer toutes les figures ouvertes avant de créer une nouvelle figure
+    plt.close('all')
+    
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), gridspec_kw={'height_ratios': [3, 1]})
     
     # Plot des prix et des moyennes mobiles
@@ -97,18 +101,7 @@ def plot_data(df, crypto_id):
     
     plt.tight_layout()
     plt.show()
-    
-    # Plot du RSI
-    ax2.plot(df.index, df['rsi'], label='RSI', color='magenta')
-    ax2.axhline(30, linestyle='--', alpha=0.5, color='red')
-    ax2.axhline(70, linestyle='--', alpha=0.5, color='red')
-    ax2.set_title('Indice de Force Relative (RSI)')
-    ax2.set_ylabel('RSI')
-    ax2.set_xlabel('Date')
-    ax2.legend()
-    
-    plt.tight_layout()
-    plt.show()
+    plt.close(fig)  # Fermer explicitement la figure après l'affichage
 
 def provide_advice(df):
     for index, row in df.iterrows():
