@@ -1,4 +1,10 @@
-# crypto_analyzer.py
+"""
+ this programm will just analyse the crypto that you will choose and will advice you and show you a graphic. He will tell you if it's a good idea to buy or to sell.
+
+Author: AyzoxxRL
+Date: 2024-06-26
+Version: 1.0
+"""
 
 import requests
 import pandas as pd
