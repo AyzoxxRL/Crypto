@@ -86,7 +86,30 @@ def provide_advice(df):
                 print(f"{index.date()}: Attendre. Prix actuel: {row['price']:.2f} USD")
 
 def main():
-    crypto_id = input("Entrez l'ID de la cryptomonnaie (ex: bitcoin, ethereum) : ")
+    cryptos = {
+        'bitcoin': 'bitcoin',
+        'ethereum': 'ethereum',
+        'ripple': 'ripple',
+        'litecoin': 'litecoin',
+        'cardano': 'cardano',
+        'polkadot': 'polkadot',
+        'binancecoin': 'binancecoin',
+        'dogecoin': 'dogecoin',
+        'solana': 'solana',
+        'chainlink': 'chainlink'
+    }
+    
+    print("Cryptomonnaies disponibles :")
+    for name in cryptos.keys():
+        print(name.capitalize())
+    
+    crypto_name = input("Entrez le nom de la cryptomonnaie : ").lower()
+    crypto_id = cryptos.get(crypto_name)
+    
+    if not crypto_id:
+        print("Cryptomonnaie non trouvée.")
+        return
+    
     days = int(input("Entrez le nombre de jours de données à récupérer : "))
     
     df = fetch_crypto_data(crypto_id, days)
@@ -108,3 +131,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+    ### Explication
+
+# - **cryptos** : Dictionnaire contenant les IDs des cryptomonnaies populaires.
+# - **crypto_name** : Nom de la cryptomonnaie entré par l'utilisateur.
+# - **crypto_id** : ID de la cryptomonnaie récupéré à partir du dictionnaire `cryptos`.
+
+# le script permet à l'utilisateur de choisir parmi une liste de cryptomonnaies populaires et fournit des conseils basés sur l'évolution de la cryptomonnaie choisie. Les graphiques sont générés pour visualiser les données et les indicateurs techniques.##
+# Ne me remerciez pas#
