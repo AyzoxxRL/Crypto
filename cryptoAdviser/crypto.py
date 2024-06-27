@@ -1,13 +1,3 @@
-"""
-this programm will analyse the crypto that you will choose and will advice you and show you a graphic.
- He will tell you if it's a good idea to buy or to sell. In this new version you can now buy it if you want.
- The programm is now more precise.
-
-Author: Nolhan
-Date: 2024-06-21
-Version: 1.3
-"""
-
 import requests
 import pandas as pd
 import numpy as np
@@ -74,7 +64,7 @@ def generate_signals(df, short_window, long_window):
 def plot_data(df, crypto_id):
     plt.close('all')
     
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(14, 15), gridspec_kw={'height_ratios': [3, 1, 1]})
+    fig, ax1 = plt.subplots(figsize=(14, 7))
     
     # Plot des prix et des moyennes mobiles
     ax1.plot(df.index, df['price'], label='Prix', color='blue')
@@ -95,30 +85,31 @@ def plot_data(df, crypto_id):
         elif row['position'] == -1:
             ax1.annotate('Vendre', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
                          arrowprops=dict(facecolor='green', shrink=0.05), color='green')
+    
+    # Ajouter des lignes de tendance
+    ax1.plot(df.index, df['price'].rolling(window=30).min(), color='green', linestyle='--', label='Meilleur prix d\'achat')
+    ax1.plot(df.index, df['price'].rolling(window=30).max(), color='red', linestyle='--', label='Meilleur prix de vente')
+    
+    # Ajouter des flèches pour indiquer les mouvements de prix
+    for i in range(1, len(df)):
+        if df['price'].iloc[i] > df['price'].iloc[i-1]:
+            ax1.annotate('', xy=(df.index[i], df['price'].iloc[i]), xytext=(df.index[i-1], df['price'].iloc[i-1]),
+                         arrowprops=dict(facecolor='blue', shrink=0.05, width=1, headwidth=5))
         else:
-            if row['rsi'] < 30:
-                ax1.annotate('Attendre', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
-                             arrowprops=dict(facecolor='blue', shrink=0.05), color='blue')
-            elif row['rsi'] > 70:
-                ax1.annotate('Attendre', xy=(index, row['price']), xytext=(index, row['price'] + 0.05),
-                             arrowprops=dict(facecolor='blue', shrink=0.05), color='blue')
+            ax1.annotate('', xy=(df.index[i], df['price'].iloc[i]), xytext=(df.index[i-1], df['price'].iloc[i-1]),
+                         arrowprops=dict(facecolor='blue', shrink=0.05, width=1, headwidth=5))
     
-    # Plot du RSI
-    ax2.plot(df.index, df['rsi'], label='RSI', color='magenta')
-    ax2.axhline(30, linestyle='--', alpha=0.5, color='red')
-    ax2.axhline(70, linestyle='--', alpha=0.5, color='red')
-    ax2.set_title('Indice de Force Relative (RSI)')
-    ax2.set_ylabel('RSI')
-    ax2.set_xlabel('Date')
-    ax2.legend()
+    # Ajouter des annotations spécifiques pour les points d'achat et de vente
+    buy_points = df[df['position'] == 1].index
+    sell_points = df[df['position'] == -1].index
     
-    # Plot du MACD
-    ax3.plot(df.index, df['macd'], label='MACD', color='blue')
-    ax3.plot(df.index, df['macd_signal'], label='Signal MACD', color='red')
-    ax3.set_title('MACD (Moving Average Convergence Divergence)')
-    ax3.set_ylabel('MACD')
-    ax3.set_xlabel('Date')
-    ax3.legend()
+    for point in buy_points:
+            ax1.annotate('Acheter', xy=(point, df.loc[point, 'price']), xytext=(point, df.loc[point, 'price'] + 0.05),
+                 arrowprops=dict(facecolor='red', shrink=0.05), color='red')
+
+    for point in sell_points:
+        ax1.annotate('Vendre', xy=(point, df.loc[point, 'price']), xytext=(point, df.loc[point, 'price'] + 0.05),
+                     arrowprops=dict(facecolor='blue', shrink=0.05), color='blue')
     
     plt.tight_layout()
     plt.show()
@@ -131,9 +122,9 @@ def provide_advice(df):
         elif row['position'] == -1:
             print(f"{index.date()}: Vendre à {row['price']:.2f} USD")
         else:
-            if row['rsi'] < 30:
+            if row['rsi'] < 30 and row['macd'] > row['macd_signal'] and row['price'] < row['lower_band']:
                 print(f"{index.date()}: RSI bas ({row['rsi']:.2f}), possible opportunité d'achat bientôt.")
-            elif row['rsi'] > 70:
+            elif row['rsi'] > 70 and row['macd'] < row['macd_signal'] and row['price'] > row['upper_band']:
                 print(f"{index.date()}: RSI élevé ({row['rsi']:.2f}), possible opportunité de vente bientôt.")
             else:
                 print(f"{index.date()}: Attendre. Prix actuel: {row['price']:.2f} USD")
@@ -174,8 +165,7 @@ def main():
     
     tk.Label(root, text="Entrez le nombre de jours :", font=("Helvetica", 12), bg="#f0f0f0").pack(pady=5)
     days_var = tk.IntVar()
-    dayBox=tk.Entry(root, textvariable=days_var, font=("Helvetica", 12)).pack(pady=5)
-    # dayBox.insert(0, "1")
+    tk.Entry(root, textvariable=days_var, font=("Helvetica", 12)).pack(pady=5)
     
     def on_analyze():
         crypto_name = crypto_name_var.get().lower()
